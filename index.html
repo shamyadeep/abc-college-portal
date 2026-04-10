@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ABC College Portal</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body {
+    font-family: Arial;
+    background: #121212;
+    color: white;
+    text-align: center;
+}
+.container {
+    width: 320px;
+    margin: auto;
+    background: #1e1e1e;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 10px;
+}
+input, select, button {
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0;
+}
+button {
+    background: green;
+    color: white;
+}
+#courseSection, #adminPanel {
+    display: none;
+}
+table {
+    width: 90%;
+    margin: auto;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+th, td {
+    border: 1px solid white;
+    padding: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>ABC College Portal</h2>
+
+<p><i>From the Desk of Director:</i> "Your future begins here. Stay focused and committed to excellence."</p>
+
+<!-- Registration -->
+<div class="container">
+    <h3>Register</h3>
+    <input type="text" id="name" placeholder="Name">
+    <input type="text" id="phone" placeholder="Phone">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="register()">Register</button>
+</div>
+
+<!-- Student Login -->
+<div class="container">
+    <h3>Student Login</h3>
+    <input type="text" id="loginPhone" placeholder="Mobile">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button onclick="login()">Login</button>
+</div>
+
+<!-- Admin Login -->
+<div class="container">
+    <h3>Admin Login</h3>
+    <input type="text" id="adminUser" placeholder="Admin Username">
+    <input type="password" id="adminPass" placeholder="Password">
+    <button onclick="adminLogin()">Login as Admin</button>
+</div>
+
+<!-- Course Section -->
+<div class="container" id="courseSection">
+    <h3>Select Course</h3>
+    <select id="course" onchange="selectCourse()">
+        <option value="">--Select--</option>
+        <option value="Arts">Arts</option>
+        <option value="Commerce">Commerce</option>
+        <option value="Science">Science</option>
+    </select>
+
+    <p id="subjects"></p>
+    <p id="fees"></p>
+
+    <button onclick="generatePDF()">Download PDF</button>
+</div>
+
+<!-- Admin Dashboard -->
+<div id="adminPanel">
+    <h2>Admin Dashboard</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Course</th>
+                <th>Fees</th>
+            </tr>
+        </thead>
+        <tbody id="studentTable"></tbody>
+    </table>
+</div>
+
+<script>
+let currentStudent = {};
+
+// REGISTER
+function register() {
+    let student = {
+        name: name.value,
+        phone: phone.value,
+        email: email.value,
+        password: password.value,
+        course: "",
+        fees: ""
+    };
+
+    let students = JSON.parse(localStorage.getItem("students")) || [];
+    students.push(student);
+    localStorage.setItem("students", JSON.stringify(students));
+
+    alert("Registered Successfully!");
+}
+
+// LOGIN
+function login() {
+    let students = JSON.parse(localStorage.getItem("students")) || [];
+
+    let user = students.find(s => 
+        s.phone === loginPhone.value && s.password === loginPassword.value
+    );
+
+    if(user) {
+        currentStudent = user;
+        alert("Login Successful");
+        document.getElementById("courseSection").style.display = "block";
+    } else {
+        alert("Invalid login");
+    }
+}
+
+// SELECT COURSE
+function selectCourse() {
+    let course = course.value;
+
+    if(course === "Arts") {
+        subjects.innerText = "English, Hindi, Political Science, Economics";
+        fees.innerText = "₹15000/year";
+    }
+    else if(course === "Commerce") {
+        subjects.innerText = "English, Accounts, Business Studies, Economics";
+        fees.innerText = "₹18000/year";
+    }
+    else if(course === "Science") {
+        subjects.innerText = "Physics, Chemistry, Biology, Maths";
+        fees.innerText = "₹20000/year";
+    }
+
+    currentStudent.course = course;
+    currentStudent.fees = fees.innerText;
+
+    updateStudent(currentStudent);
+}
+
+// UPDATE STUDENT DATA
+function updateStudent(updated) {
+    let students = JSON.parse(localStorage.getItem("students"));
+
+    students = students.map(s => s.phone === updated.phone ? updated : s);
+
+    localStorage.setItem("students", JSON.stringify(students));
+}
+
+// ADMIN LOGIN
+function adminLogin() {
+    if(adminUser.value === "admin" && adminPass.value === "1234") {
+        document.getElementById("adminPanel").style.display = "block";
+        loadStudents();
+    } else {
+        alert("Wrong Admin Credentials");
+    }
+}
+
+// LOAD STUDENTS INTO TABLE
+function loadStudents() {
+    let students = JSON.parse(localStorage.getItem("students")) || [];
+    let table = document.getElementById("studentTable");
+
+    table.innerHTML = "";
+
+    students.forEach(s => {
+        table.innerHTML += `
+            <tr>
+                <td>${s.name}</td>
+                <td>${s.phone}</td>
+                <td>${s.email}</td>
+                <td>${s.course}</td>
+                <td>${s.fees}</td>
+            </tr>
+        `;
+    });
+}
+
+// PDF
+function generatePDF() {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+
+    doc.text("ABC College Admission Form", 20, 20);
+    doc.text("Name: " + currentStudent.name, 20, 40);
+    doc.text("Phone: " + currentStudent.phone, 20, 50);
+    doc.text("Course: " + currentStudent.course, 20, 60);
+    doc.text("Fees: " + currentStudent.fees, 20, 70);
+
+    doc.text("Bring this form with payment to college.", 20, 90);
+
+    doc.save("form.pdf");
+}
+</script>
+
+</body>
+</html>
